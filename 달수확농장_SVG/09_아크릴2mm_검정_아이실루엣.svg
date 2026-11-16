@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" width="150mm" height="87.2mm" viewBox="0 0 150 87.2">
+<title>아크릴 2mm 검정 아이 실루엣</title>
+<desc>단위 mm, 1:1. 정면에서 본 모습. 3D의 폴리곤 좌표 그대로. 아래 탭(폭 5×길이 3)이 사다리 윗발판 슬롯에 꽂힘.</desc>
+<g id="CUT_절단" inkscape:groupmode="layer" inkscape:label="CUT_절단(빨강)" fill="none" stroke="#ff0000" stroke-width="0.1" stroke-linejoin="round"><g id="CH" transform="translate(6 14)"><path d="M0.4 0.6 L2.2 0 L3.4 1.4 L4.4 4 L7.4 6.8 L10.2 9.8 L12 11 L12.2 9 L12 7 L13 5 L15.6 3.4 L19 2.8 L22 4 L23.8 6.8 L24.8 11.6 L23 13.4 L21.6 14.4 L23 18.6 L25 22.8 L27 25 L27.6 27 L26.2 27.4 L24.6 25 L23 21.8 L24 25.8 L26.6 31.8 L28.4 32.6 L25.2 36.2 L22.6 36.4 L23.4 41.8 L24.8 45.2 L26.6 47.8 L26.2 49 L24.2 49 L24.2 52 L19.2 52 L19.2 49 L17.2 49 L16.8 44 L18.2 39 L19 36.6 L11.8 37 L9 35.6 L10 32.4 L11.2 26.2 L12 20 L12.4 16 L11.2 14.4 L8 11.4 L4.4 7 L1.8 5 L0 2.2Z"/></g></g>
+<g id="SCORE_선각인" inkscape:groupmode="layer" inkscape:label="SCORE_선각인(파랑)" fill="none" stroke="#0000ff" stroke-width="0.1"></g>
+<g id="ENGRAVE_면각인" inkscape:groupmode="layer" inkscape:label="ENGRAVE_면각인(검정)" fill="#000000" stroke="none"></g>
+<g id="LABEL_참고용" inkscape:groupmode="layer" inkscape:label="LABEL_참고용(가공 제외)" fill="#888888" stroke="none" font-family="sans-serif" font-size="3"><text x="6" y="9.4" font-size="2.6">CH ×1 · 28.4×52</text><text x="6" y="12.4" font-size="2.4">아이 실루엣(검정 아크릴)</text><text x="6" y="76.6">설치 위치: 3D 좌표에서 실루엣 발 변(탭 위)이 x=26.2~35.2, y=111, z=12~14. 손끝과 달 </text><text x="6" y="81.2">앞판 사이 틈이 이 장면의 핵심 — 설치 후 틈을 확인.</text></g>
+</svg>

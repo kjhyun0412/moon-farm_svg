@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>달 수확 농장 (Moon Harvester) - 최종 디테일 3D 뷰어</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Malgun Gothic', sans-serif;
+    background: #080a10;
+    color: #e6ebf5;
+    overflow: hidden;
+    display: flex;
+    height: 100vh;
+  }
+  #canvas-container {
+    flex: 1;
+    position: relative;
+    background: radial-gradient(circle at 50% 45%, #192238 0%, #070910 100%);
+  }
+  #ui-panel {
+    width: 325px;
+    background: rgba(13, 17, 27, 0.96);
+    border-left: 1px solid rgba(255, 226, 138, 0.16);
+    padding: 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    overflow-y: auto;
+    z-index: 10;
+  }
+  h1 {
+    font-size: 17px;
+    font-weight: 700;
+    color: #ffe28a;
+    letter-spacing: -0.3px;
+  }
+  .subtitle {
+    font-size: 11.5px;
+    color: #8f9bb3;
+    margin-top: 3px;
+  }
+  .control-group {
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+    padding: 11px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+  }
+  .control-title {
+    font-size: 11px;
+    font-weight: 700;
+    color: #b8c4d9;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .btn-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+  }
+  button {
+    background: #1e2538;
+    color: #e6ebf5;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 6px;
+    padding: 7px 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.15s ease;
+  }
+  button:hover { background: #2b3550; border-color: rgba(255, 226, 138, 0.45); }
+  button.active {
+    background: #ffe28a;
+    color: #111520;
+    border-color: #ffe28a;
+  }
+  .slider-row {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .slider-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: #cbd5e1;
+  }
+  input[type="range"] {
+    width: 100%;
+    accent-color: #ffe28a;
+    cursor: pointer;
+  }
+  .toggle-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12.5px;
+    cursor: pointer;
+  }
+  .toggle-item input {
+    width: 15px;
+    height: 15px;
+    accent-color: #ffe28a;
+    cursor: pointer;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: 600;
+    background: rgba(255, 226, 138, 0.15);
+    color: #ffe28a;
+  }
+  .spec-list {
+    font-size: 11px;
+    color: #94a3b8;
+    line-height: 1.55;
+  }
+  .spec-list strong { color: #e2e8f0; }
+  #overlay-hint {
+    position: absolute;
+    bottom: 14px;
+    left: 14px;
+    background: rgba(10, 13, 20, 0.8);
+    backdrop-filter: blur(6px);
+    padding: 7px 13px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    color: #cbd5e1;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    pointer-events: none;
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+<div id="canvas-container">
+  <div id="overlay-hint">좌클릭: 360° 회전 · 우클릭: 평행 이동 · 휠: 줌 인/아웃</div>
+</div>
+
+<div id="ui-panel">
+  <div>
+    <div style="display:flex; align-items:center; justify-content:space-between;">
+      <h1>달 수확 농장 최종 3D</h1>
+      <span class="badge">디테일 완성</span>
+    </div>
+    <div class="subtitle">달 상향·사다리 외측 배치·별 장식 통일·초승달 셰이프 통일</div>
+  </div>
+
+  <div class="control-group">
+    <div class="control-title">카메라 시점 (Camera Presets)</div>
+    <div class="btn-row">
+      <button onclick="setView('mockup')" class="active" id="btn-mockup">메인 앵글</button>
+      <button onclick="setView('front')" id="btn-front">정면 아치 뷰</button>
+      <button onclick="setView('inside')" id="btn-inside">손끝-달 클로즈업</button>
+      <button onclick="setView('topangle')" id="btn-topangle">우측 상단 뷰</button>
+    </div>
+  </div>
+
+  <div class="control-group">
+    <div class="control-title">분해 조립 및 조명</div>
+    <div class="slider-row">
+      <div class="slider-header">
+        <span>3D 분해도 (Exploded View)</span>
+        <span id="explode-val">0%</span>
+      </div>
+      <input type="range" id="explode-slider" min="0" max="100" value="0">
+    </div>
+    <label class="toggle-item">
+      <span>초승달 후광 & 소품 LED 점등</span>
+      <input type="checkbox" id="toggle-led" checked>
+    </label>
+  </div>
+
+  <div class="control-group">
+    <div class="control-title">레이어 표시 / 숨김</div>
+    <label class="toggle-item">
+      <span>S1 앞판 (별 금박 아트워크)</span>
+      <input type="checkbox" id="vis-front" checked>
+    </label>
+    <label class="toggle-item">
+      <span>S2 좌측 옆판 (초승달·별자리)</span>
+      <input type="checkbox" id="vis-left" checked>
+    </label>
+    <label class="toggle-item">
+      <span>S3 우측 옆판 (투시용 기본숨김)</span>
+      <input type="checkbox" id="vis-right">
+    </label>
+    <label class="toggle-item">
+      <span>S4 상판 & S6 뒤판</span>
+      <input type="checkbox" id="vis-back" checked>
+    </label>
+    <label class="toggle-item">
+      <span>다중 레이어 덩굴</span>
+      <input type="checkbox" id="vis-decor" checked>
+    </label>
+  </div>
+
+  <div class="control-group">
+    <div class="control-title">반영된 수정 사항</div>
+    <div class="spec-list">
+      • <strong>좌측 옆판 초승달 보정:</strong> 외면 및 내벽의 초승달 두 원 교점 각도를 정확히 계산하여 양 끝이 뾰족하게 닫히는 완전한 초승달로 수정<br>
+      • <strong>달 & 사다리 거리:</strong> 달 위치 상향(Y=184) + 사다리 우측 외측 이동으로 손끝이 달에 닿을락 말락 한 여백 확보<br>
+      • <strong>물뿌리개 & 모종삽:</strong> 전경 소품 비율 1.45배 확대<br>
+      • <strong>별 장식 & 초승달 셰이프 통일:</strong> 표지 별 장식 및 모든 작은 달 도형 통일<br>
+      • <strong>아치 거울 제거:</strong> 뒷벽 금테 아치 거울을 삭제<br>
+      • <strong>작은 신발 추가:</strong> 꽃바구니 옆 앞쪽 바닥에 벗어 둔 아이 신발 한 켤레(소품 레이어에 포함)
+    </div>
+  </div>
+</div>
+
+<script>
+const container = document.getElementById('canvas-container');
+const scene = new THREE.Scene();
+
+const camera = new THREE.PerspectiveCamera(38, container.clientWidth / container.clientHeight, 1, 2500);
+camera.position.set(138, 134, 315);
+
+const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+renderer.setSize(container.clientWidth, container.clientHeight);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.12;
+container.appendChild(renderer.domElement);
+
+const controls = new THREE.OrbitControls(camera, renderer.domElement);
+controls.target.set(0, 124, 0);
+controls.enableDamping = true;
+controls.dampingFactor = 0.06;
+
+// 조명 설정
+const ambientLight = new THREE.AmbientLight(0x6b7fa8, 0.85);
+scene.add(ambientLight);
+
+const keyLight = new THREE.DirectionalLight(0xfff3e0, 0.85);
+keyLight.position.set(150, 260, 240);
+keyLight.castShadow = true;
+keyLight.shadow.mapSize.width = 2048;
+keyLight.shadow.mapSize.height = 2048;
+keyLight.shadow.bias = -0.0005;
+scene.add(keyLight);
+
+const moonLight = new THREE.PointLight(0xffcf54, 2.5, 230, 1.35);
+moonLight.position.set(-16, 184, 8);
+scene.add(moonLight);
+
+const shelfLight = new THREE.PointLight(0xffb84d, 1.4, 130, 1.5);
+shelfLight.position.set(-34, 116, -28);
+scene.add(shelfLight);
+
+// 재질 정의
+const matNavyCover = new THREE.MeshStandardMaterial({ color: 0x17223b, roughness: 0.72, metalness: 0.05 });
+const matBirchWarm = new THREE.MeshStandardMaterial({ color: 0xce9658, roughness: 0.65 });
+const matWoodDark = new THREE.MeshStandardMaterial({ color: 0x7d4f27, roughness: 0.7 });
+const matFenceCream = new THREE.MeshStandardMaterial({ color: 0xebd7ba, roughness: 0.62 });
+const matSkyDark = new THREE.MeshStandardMaterial({ color: 0x11192e, roughness: 0.88 });
+const matMossFloor = new THREE.MeshStandardMaterial({ color: 0x263b21, roughness: 0.9 });
+const matBlackAcrylic = new THREE.MeshStandardMaterial({ color: 0x0c0e12, roughness: 0.25, metalness: 0.15 });
+const matGoldFoil = new THREE.MeshStandardMaterial({ color: 0xf9d268, emissive: 0x6b4e00, roughness: 0.25, metalness: 0.65 });
+const matOpalGlow = new THREE.MeshStandardMaterial({
+  color: 0xfff9e6,
+  emissive: 0xffcc4d,
+  emissiveIntensity: 1.15,
+  roughness: 0.22
+});
+const matGlass = new THREE.MeshPhysicalMaterial({
+  color: 0xffffff,
+  transparent: true,
+  opacity: 0.38,
+  roughness: 0.08,
+  metalness: 0.1,
+  transmission: 0.55
+});
+const matTerracotta = new THREE.MeshStandardMaterial({ color: 0xc2603c, roughness: 0.78 });
+const matPewter = new THREE.MeshStandardMaterial({ color: 0x949eae, roughness: 0.32, metalness: 0.7 });
+const matLeafGreen = new THREE.MeshStandardMaterial({ color: 0x4b8748, roughness: 0.68 });
+const matVineStem = new THREE.MeshStandardMaterial({ color: 0x336131, roughness: 0.78 });
+const matFlowerPink = new THREE.MeshStandardMaterial({ color: 0xf48fb1, roughness: 0.58 });
+const matFlowerPeach = new THREE.MeshStandardMaterial({ color: 0xffab91, roughness: 0.58 });
+const matFlowerCream = new THREE.MeshStandardMaterial({ color: 0xfff3a1, roughness: 0.58 });
+
+// [공통 초승달 셰이프 생성 함수]
+function createCrescentShape(scale = 1.0) {
+  const R1 = 27.2 * scale;
+  const R2 = 22.75 * scale;
+  const d = 12.5 * scale;
+  const a = (R1 * R1 - R2 * R2 + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, R1 * R1 - a * a));
+
+  const shape = new THREE.Shape();
+  shape.absarc(0, 0, R1, Math.atan2(h, a), -Math.atan2(h, a), false);
+  shape.absarc(d, 0, R2, Math.atan2(-h, a - d), Math.atan2(h, a - d), true);
+  shape.closePath();
+  return shape;
+}
+
+// [캔버스용 완전한 초승달 드로잉 헬퍼] 두 원의 정확한 교점을 계산하여 잘림 없이 뾰족하게 닫히는 초승달 그리기
+function drawFullCrescentOnCanvas(ctx, cx, cy, R1, R2, d) {
+  const a = (R1 * R1 - R2 * R2 + d * d) / (2 * d);
+  const h = Math.sqrt(Math.max(0, R1 * R1 - a * a));
+
+  const start1 = Math.atan2(h, a);
+  const end1 = -Math.atan2(h, a);
+  const start2 = Math.atan2(-h, a - d);
+  const end2 = Math.atan2(h, a - d);
+
+  ctx.beginPath();
+  ctx.arc(cx, cy, R1, start1, end1, false);
+  ctx.arc(cx + d, cy, R2, start2, end2, true);
+  ctx.closePath();
+  ctx.fill();
+}
+
+// [공통 4각 별 셰이프 생성 함수]
+function createFourPointStarShape(outerR = 3.0, innerR = 0.95) {
+  const shape = new THREE.Shape();
+  for (let i = 0; i < 8; i++) {
+    const r = (i % 2 === 0) ? outerR : innerR;
+    const ang = (i * Math.PI) / 4;
+    const x = Math.cos(ang) * r;
+    const y = Math.sin(ang) * r;
+    if (i === 0) shape.moveTo(x, y);
+    else shape.lineTo(x, y);
+  }
+  shape.closePath();
+  return shape;
+}
+
+// 캔버스 텍스처 생성기
+function createFrontCoverTexture() {
+  const cvs = document.createElement('canvas');
+  cvs.width = 600; cvs.height = 1250;
+  const ctx = cvs.getContext('2d');
+
+  ctx.fillStyle = '#17223b';
+  ctx.fillRect(0, 0, 600, 1250);
+
+  ctx.strokeStyle = '#f7cf65';
+  ctx.fillStyle = '#f7cf65';
+
+  ctx.lineWidth = 4;
+  ctx.strokeRect(8, 8, 584, 1234);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(18, 18, 564, 1214);
+
+  ctx.setLineDash([7, 5]);
+  ctx.strokeRect(27, 27, 546, 1196);
+  ctx.setLineDash([]);
+
+  function drawSparkleStar(cx, cy, rx, ry) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - ry);
+    ctx.quadraticCurveTo(cx, cy, cx + rx, cy);
+    ctx.quadraticCurveTo(cx, cy, cx, cy + ry);
+    ctx.quadraticCurveTo(cx, cy, cx - rx, cy);
+    ctx.quadraticCurveTo(cx, cy, cx, cy - ry);
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  function drawFiveStar(cx, cy, outerR, innerR) {
+    let rot = Math.PI / 2 * 3;
+    let step = Math.PI / 5;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerR);
+    for (let i = 0; i < 5; i++) {
+      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+      rot += step;
+      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+      rot += step;
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  for (let y = 75; y <= 1185; y += 34) {
+    drawSparkleStar(11, y, 6.5, 11);
+    drawSparkleStar(574, y, 8.5, 12.5);
+  }
+  for (let x = 50; x <= 550; x += 36) {
+    drawSparkleStar(x, 1236, 10, 6);
+  }
+
+  drawSparkleStar(300, 36, 14, 22);
+  drawFiveStar(48, 66, 22, 9);
+  drawFiveStar(516, 74, 20, 8);
+  drawSparkleStar(548, 54, 13, 13);
+
+  const acx = 300, acy = 302.5, ar = 266;
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(acx - ar, 1218);
+  ctx.lineTo(acx - ar, acy);
+  ctx.arc(acx, acy, ar, Math.PI, 0, false);
+  ctx.lineTo(acx + ar, 1218);
+  ctx.stroke();
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function createSideCoverTexture(hasMoon) {
+  const cvs = document.createElement('canvas');
+  cvs.width = 735; cvs.height = 1250;
+  const ctx = cvs.getContext('2d');
+
+  ctx.fillStyle = '#17223b';
+  ctx.fillRect(0, 0, 735, 1250);
+
+  ctx.strokeStyle = '#f7cf65';
+  ctx.fillStyle = '#f7cf65';
+  ctx.lineWidth = 4;
+  ctx.strokeRect(14, 14, 707, 1222);
+  ctx.lineWidth = 2;
+  ctx.strokeRect(26, 26, 683, 1198);
+  ctx.setLineDash([8, 6]);
+  ctx.strokeRect(36, 36, 663, 1178);
+  ctx.setLineDash([]);
+
+  function drawStar(cx, cy, spikes, outerR, innerR) {
+    let rot = Math.PI / 2 * 3;
+    let step = Math.PI / spikes;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - outerR);
+    for (let i = 0; i < spikes; i++) {
+      ctx.lineTo(cx + Math.cos(rot) * outerR, cy + Math.sin(rot) * outerR);
+      rot += step;
+      ctx.lineTo(cx + Math.cos(rot) * innerR, cy + Math.sin(rot) * innerR);
+      rot += step;
+    }
+    ctx.closePath();
+    ctx.fill();
+  }
+
+  if (hasMoon) {
+    // [수정] 좌측 옆판 바깥면: 잘림 없는 완전한 초승달 드로잉 적용
+    drawFullCrescentOnCanvas(ctx, 375, 560, 96, 80, 44);
+    [[140, 180, 16], [580, 260, 12], [220, 880, 18], [540, 1020, 15], [160, 1080, 11], [610, 620, 10]].forEach(([x, y, r]) => {
+      drawStar(x, y, 5, r, r * 0.42);
+    });
+  } else {
+    [[180, 220, 16], [540, 340, 13], [360, 620, 20], [160, 920, 12], [560, 1040, 16]].forEach(([x, y, r]) => {
+      drawStar(x, y, 5, r, r * 0.42);
+    });
+  }
+
+  const tex = new THREE.CanvasTexture(cvs);
+  tex.anisotropy = 8;
+  return tex;
+}
+
+function createInnerLeftWallTexture() {
+  const cvs = document.createElement('canvas');
+  cvs.width = 735; cvs.height = 1250;
+  const ctx = cvs.getContext('2d');
+
+  const grad = ctx.createLinearGradient(0, 0, 0, 1250);
+  grad.addColorStop(0, '#131d36');
+  grad.addColorStop(0.5, '#192645');
+  grad.addColorStop(1, '#10172b');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 735, 1250);
+
+  ctx.strokeStyle = '#f5cb5c';
+  ctx.fillStyle = '#f5cb5c';
+
+  ctx.save();
+  ctx.setLineDash([6, 6]);
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.ellipse(355, 520, 115, 175, 0, 0, Math.PI * 2);
+  ctx.stroke();
+  ctx.restore();
+
+  // [수정] 좌측 옆판 안쪽 벽면: 타원 중앙에 잘림 없는 완전한 초승달 드로잉 적용
+  drawFullCrescentOnCanvas(ctx, 365, 520, 90, 75, 41);
+
+  function drawStar(cx, cy, r) {
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.quadraticCurveTo(cx, cy, cx + r, cy);
+    ctx.quadraticCurveTo(cx, cy, cx, cy + r);
+    ctx.quadraticCurveTo(cx, cy, cx - r, cy);
+    ctx.quadraticCurveTo(cx, cy, cx, cy - r);
+    ctx.fill();
+  }
+  [[180, 240, 16], [520, 310, 14], [190, 760, 18], [480, 830, 15], [260, 980, 12], [560, 550, 12]].forEach(([x, y, r]) => drawStar(x, y, r));
+
+  return new THREE.CanvasTexture(cvs);
+}
+
+function createMoonHaloTexture() {
+  const cvs = document.createElement('canvas');
+  cvs.width = 256; cvs.height = 256;
+  const ctx = cvs.getContext('2d');
+  const grad = ctx.createRadialGradient(128, 128, 15, 128, 128, 124);
+  grad.addColorStop(0, 'rgba(255, 224, 120, 0.55)');
+  grad.addColorStop(0.45, 'rgba(255, 200, 90, 0.22)');
+  grad.addColorStop(1, 'rgba(255, 200, 90, 0)');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 256, 256);
+  return new THREE.CanvasTexture(cvs);
+}
+
+const W = 120, H = 250, D = 147;
+const parts = {};
+function registerPart(name, obj, explodeVec) {
+  obj.traverse(c => {
+    if (c.isMesh && !c.userData.noShadow) {
+      c.castShadow = true;
+      c.receiveShadow = true;
+    }
+  });
+  scene.add(obj);
+  parts[name] = {
+    mesh: obj,
+    basePos: obj.position.clone(),
+    explodeVec: new THREE.Vector3(...explodeVec)
+  };
+  return obj;
+}
+
+// ==============================================================================
+// 1. 외장 구조판
+// ==============================================================================
+(function buildShell() {
+  const s1Group = new THREE.Group();
+  const s1Shape = new THREE.Shape();
+  s1Shape.moveTo(-60, 0); s1Shape.lineTo(60, 0); s1Shape.lineTo(60, 250); s1Shape.lineTo(-60, 250); s1Shape.closePath();
+
+  const archHole = new THREE.Path();
+  const cx = 0, archY = 189.5, r = 52.1, botY = 6.4;   // 아치를 앞판 가운데(x=0)에 정렬
+  archHole.moveTo(cx - r, botY); archHole.lineTo(cx - r, archY);
+  archHole.absarc(cx, archY, r, Math.PI, 0, true);
+  archHole.lineTo(cx + r, botY); archHole.closePath();
+  s1Shape.holes.push(archHole);
+
+  const s1Geo = new THREE.ExtrudeGeometry(s1Shape, { depth: 3, bevelEnabled: false });
+  const posAttr = s1Geo.attributes.position;
+  const uvAttr = s1Geo.attributes.uv;
+  for (let i = 0; i < posAttr.count; i++) {
+    uvAttr.setXY(i, (posAttr.getX(i) + 60) / 120, posAttr.getY(i) / 250);
+  }
+  const frontTex = createFrontCoverTexture();
+  const s1Mesh = new THREE.Mesh(s1Geo, [
+    new THREE.MeshStandardMaterial({ map: frontTex, roughness: 0.62 }),
+    matNavyCover
+  ]);
+  s1Group.add(s1Mesh);
+
+  const archGold = new THREE.Shape();
+  archGold.moveTo(cx - r - 1.3, botY); archGold.lineTo(cx - r - 1.3, archY);
+  archGold.absarc(cx, archY, r + 1.3, Math.PI, 0, true);
+  archGold.lineTo(cx + r + 1.3, botY);
+  archGold.lineTo(cx + r, botY); archGold.lineTo(cx + r, archY);
+  archGold.absarc(cx, archY, r, 0, Math.PI, false);
+  archGold.lineTo(cx - r, botY);
+  const archGoldMesh = new THREE.Mesh(new THREE.ExtrudeGeometry(archGold, { depth: 3.1, bevelEnabled: false }), matGoldFoil);
+  archGoldMesh.position.z = -0.05;
+  s1Group.add(archGoldMesh);
+
+  s1Group.position.set(0, 0, D / 2 - 3);
+  registerPart('front', s1Group, [0, 0, 55]);
+
+  const leftOutTex = createSideCoverTexture(true);
+  const leftInTex = createInnerLeftWallTexture();
+  const s2Mesh = new THREE.Mesh(new THREE.BoxGeometry(3, H, D), [
+    new THREE.MeshStandardMaterial({ map: leftInTex, roughness: 0.72 }),
+    new THREE.MeshStandardMaterial({ map: leftOutTex, roughness: 0.62 }),
+    matNavyCover, matNavyCover, matNavyCover, matNavyCover
+  ]);
+  s2Mesh.position.set(-W / 2 + 1.5, H / 2, 0);
+  registerPart('left', s2Mesh, [-45, 0, 0]);
+
+  const rightTex = createSideCoverTexture(false);
+  const s3Mesh = new THREE.Mesh(new THREE.BoxGeometry(3, H, D), [
+    new THREE.MeshStandardMaterial({ map: rightTex, roughness: 0.62 }),
+    matNavyCover,
+    matNavyCover, matNavyCover, matNavyCover, matNavyCover
+  ]);
+  s3Mesh.position.set(W / 2 - 1.5, H / 2, 0);
+  s3Mesh.visible = false;
+  registerPart('right', s3Mesh, [45, 0, 0]);
+
+  const s4Mesh = new THREE.Mesh(new THREE.BoxGeometry(114, 3, D), matNavyCover);
+  s4Mesh.position.set(0, H - 1.5, 0);
+  registerPart('top', s4Mesh, [0, 35, 0]);
+
+  const s5Mesh = new THREE.Mesh(new THREE.BoxGeometry(114, 3, D), matNavyCover);
+  s5Mesh.position.set(0, 1.5, 0);
+  registerPart('bottom', s5Mesh, [0, -25, 0]);
+
+  const s6Mesh = new THREE.Mesh(new THREE.BoxGeometry(114, 244, 3), matNavyCover);
+  s6Mesh.position.set(0, 125, -D / 2 + 1.5);
+  registerPart('back', s6Mesh, [0, 0, -55]);
+
+  const s7Group = new THREE.Group();
+  const s7Mesh = new THREE.Mesh(new THREE.BoxGeometry(114, 241, 3), matSkyDark);
+  s7Group.add(s7Mesh);
+  const bgStarGeo = new THREE.ExtrudeGeometry(createFourPointStarShape(1.5, 0.45), { depth: 0.3, bevelEnabled: false });
+  for (let i = 0; i < 55; i++) {
+    const st = new THREE.Mesh(bgStarGeo, matGoldFoil);
+    st.scale.setScalar((i % 3 === 0) ? 1.1 : 0.7);
+    st.position.set(((i * 37) % 102) - 51, ((i * 53) % 215) - 102, 1.6);
+    s7Group.add(st);
+  }
+  s7Group.position.set(0, 124, -D / 2 + 4.8);
+  registerPart('sky', s7Group, [0, 0, -35]);
+
+  const s9Group = new THREE.Group();
+  const s9Mesh = new THREE.Mesh(new THREE.BoxGeometry(114, 4, 141), matMossFloor);
+  s9Group.add(s9Mesh);
+
+  const grassBladeGeo = new THREE.ConeGeometry(1.2, 4.2, 4);
+  const fMats = [matFlowerPink, matFlowerPeach, matFlowerCream, matOpalGlow];
+  for (let i = 0; i < 45; i++) {
+    const gx = ((i * 29) % 102) - 51;
+    const gz = ((i * 41) % 126) - 63;
+    const blade = new THREE.Mesh(grassBladeGeo, matLeafGreen);
+    blade.position.set(gx, 3.8, gz);
+    blade.rotation.z = ((i % 5) - 2) * 0.15;
+    s9Group.add(blade);
+
+    if (i % 3 === 0) {
+      const tinyFlower = new THREE.Mesh(new THREE.CylinderGeometry(1.6, 1.6, 0.7, 8), fMats[i % 4]);
+      tinyFlower.position.set(gx + 1.5, 2.5, gz + 1.2);
+      s9Group.add(tinyFlower);
+    }
+  }
+  s9Group.position.set(0, 5, 0);
+  registerPart('base', s9Group, [0, -10, 0]);
+})();
+
+// ==============================================================================
+// 2. 큰 초승달 빛상자
+// ==============================================================================
+let moonHaloMesh;
+(function buildCrescentMoon() {
+  const moonGroup = new THREE.Group();
+  const outerShape = createCrescentShape(1.0);
+
+  const bodyGeo = new THREE.ExtrudeGeometry(outerShape, { depth: 15, bevelEnabled: false });
+  moonGroup.add(new THREE.Mesh(bodyGeo, matBirchWarm));
+
+  const frontGeo = new THREE.ExtrudeGeometry(outerShape, { depth: 3, bevelEnabled: true, bevelSize: 0.25, bevelThickness: 0.25 });
+  const frontMesh = new THREE.Mesh(frontGeo, matOpalGlow);
+  frontMesh.position.z = 15;
+  moonGroup.add(frontMesh);
+
+  const craterMat = new THREE.MeshStandardMaterial({ color: 0xf2c955, emissive: 0xd99b26, emissiveIntensity: 0.55, roughness: 0.5 });
+  [[-21, 2, 3.2], [-15, -13, 2.8], [-14, 14, 3.0], [-5, -20, 2.2], [-4, 21, 2.4], [-18, -5, 2.0]].forEach(([cx, cy, cr]) => {
+    const cMesh = new THREE.Mesh(new THREE.CylinderGeometry(cr, cr * 0.8, 0.3, 7), craterMat);
+    cMesh.rotation.x = Math.PI / 2;
+    cMesh.position.set(cx, cy, 18.2);
+    moonGroup.add(cMesh);
+  });
+
+  const haloMat = new THREE.MeshBasicMaterial({
+    map: createMoonHaloTexture(),
+    transparent: true,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending
+  });
+  moonHaloMesh = new THREE.Mesh(new THREE.PlaneGeometry(118, 118), haloMat);
+  moonHaloMesh.position.set(-8, 0, -2);
+  moonHaloMesh.userData.noShadow = true;
+  moonGroup.add(moonHaloMesh);
+
+  moonGroup.position.set(-16, 184, -8);
+  moonGroup.rotation.z = 0.26;
+  registerPart('moon', moonGroup, [-16, 16, 12]);
+})();
+
+// ==============================================================================
+// 3. 아이 실루엣 & 사다리 & 울타리 & 선반
+// ==============================================================================
+(function buildMainStructures() {
+  const childGroup = new THREE.Group();
+  const pts = [
+    [60.4,90.8],[62.2,90.2],[63.4,91.6],[64.4,94.2],[67.4,97],[70.2,100],[72,101.2],
+    [72.2,99.2],[72,97.2],[73,95.2],[75.6,93.6],[79,93],[82,94.2],[83.8,97],[84.8,101.8],
+    [83,103.6],[81.6,104.6],[83,108.8],[85,113],[87,115.2],[87.6,117.2],[86.2,117.6],
+    [84.6,115.2],[83,112],[84,116],[86.6,122],[88.4,122.8],[85.2,126.4],[82.6,126.6],
+    [83.4,132],[84.8,135.4],[86.6,138],[86.2,139.2],[77.2,139.2],[76.8,134.2],[78.2,129.2],
+    [79,126.8],[71.8,127.2],[69,125.8],[70,122.6],[71.2,116.4],[72,110.2],[72.4,106.2],
+    [71.2,104.6],[68,101.6],[64.4,97.2],[61.8,95.2],[60,92.4]
+  ];
+  const shape = new THREE.Shape();
+  pts.forEach((p, idx) => {
+    const x = p[0] - 76, y = 139.2 - p[1];
+    if (idx === 0) shape.moveTo(x, y); else shape.lineTo(x, y);
+  });
+  shape.closePath();
+
+  const geo = new THREE.ExtrudeGeometry(shape, { depth: 2, bevelEnabled: false });
+  childGroup.add(new THREE.Mesh(geo, matBlackAcrylic));
+  childGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo), new THREE.LineBasicMaterial({ color: 0xf7cf65 })));
+  childGroup.position.set(25, 111, 12);
+  registerPart('child', childGroup, [14, 12, 20]);
+
+  const ladder = new THREE.Group();
+  const h = 104.5, w = 27, tilt = 0.13;
+  const frontLegGeo = new THREE.BoxGeometry(4.6, h, 2);
+  [-w / 2 + 2.3, w / 2 - 2.3].forEach(lx => {
+    const leg = new THREE.Mesh(frontLegGeo, matBirchWarm);
+    leg.position.set(lx, h / 2, 7.5);
+    leg.rotation.x = -tilt;
+    ladder.add(leg);
+  });
+
+  const rungGeo = new THREE.BoxGeometry(w - 3, 2.6, 3.6);
+  for (let i = 0; i < 9; i++) {
+    const ry = 12 + i * 9.5;
+    const rz = 7.5 - (ry - h / 2) * Math.sin(tilt);
+    const rung = new THREE.Mesh(rungGeo, matBirchWarm);
+    rung.position.set(0, ry, rz);
+    ladder.add(rung);
+  }
+
+  const backLegGeo = new THREE.BoxGeometry(3.8, h, 2);
+  [-w / 2 + 2.8, w / 2 - 2.8].forEach(lx => {
+    const leg = new THREE.Mesh(backLegGeo, matBirchWarm);
+    leg.position.set(lx, h / 2, -7.5);
+    leg.rotation.x = tilt;
+    ladder.add(leg);
+  });
+
+  const brace = new THREE.Mesh(new THREE.BoxGeometry(w - 4, 3, 2), matBirchWarm);
+  brace.position.set(0, 38, -9.2);
+  ladder.add(brace);
+
+  const topStep = new THREE.Mesh(new THREE.BoxGeometry(24, 2, 14), matBirchWarm);
+  topStep.position.set(0, h - 0.5, 0);
+  ladder.add(topStep);
+
+  ladder.position.set(25, 7, 12);
+  ladder.rotation.y = -0.32;
+  registerPart('ladder', ladder, [16, 0, 22]);
+
+  const fence = new THREE.Group();
+  const railGeo = new THREE.BoxGeometry(59.6, 4.2, 2);
+  const r1 = new THREE.Mesh(railGeo, matFenceCream); r1.position.set(0, 20.5, 0);
+  const r2 = new THREE.Mesh(railGeo, matFenceCream); r2.position.set(0, 7.5, 0);
+  fence.add(r1, r2);
+
+  const postShape = new THREE.Shape();
+  postShape.moveTo(-3.3, 0); postShape.lineTo(3.3, 0); postShape.lineTo(3.3, 24.9);
+  postShape.lineTo(0, 29.4); postShape.lineTo(-3.3, 24.9); postShape.closePath();
+  const postGeo = new THREE.ExtrudeGeometry(postShape, { depth: 2, bevelEnabled: false });
+
+  for (let i = 0; i < 6; i++) {
+    const post = new THREE.Mesh(postGeo, matFenceCream);
+    post.position.set(-24.8 + i * 9.9, 0, 1);
+    fence.add(post);
+  }
+  fence.position.set(-22, 7, 46);
+  registerPart('fence', fence, [-18, 0, 34]);
+
+  const shelfGroup = new THREE.Group();
+  const pillar = new THREE.Mesh(new THREE.BoxGeometry(4.5, 152, 25), matWoodDark);
+  pillar.position.set(-54, 83, -36);
+  shelfGroup.add(pillar);
+
+  const shelfGeo = new THREE.BoxGeometry(40, 3.5, 26);
+  const bracketShape = new THREE.Shape();
+  bracketShape.moveTo(0, 0); bracketShape.lineTo(13, 0); bracketShape.lineTo(0, -13); bracketShape.closePath();
+  const bracketGeo = new THREE.ExtrudeGeometry(bracketShape, { depth: 2.5, bevelEnabled: false });
+
+  [48, 86, 124].forEach(sy => {
+    const shelf = new THREE.Mesh(shelfGeo, matBirchWarm);
+    shelf.position.set(-35.5, sy, -36);
+    shelfGroup.add(shelf);
+
+    [-46, -24].forEach(bx => {
+      const br = new THREE.Mesh(bracketGeo, matBirchWarm);
+      br.rotation.y = -Math.PI / 2;
+      br.position.set(bx, sy - 1.75, -49);
+      shelfGroup.add(br);
+    });
+  });
+  registerPart('shelves', shelfGroup, [-22, 0, -12]);
+})();
+
+// ==============================================================================
+// 4. 소품류
+// ==============================================================================
+(function buildHybridPropsAndDecor() {
+  const propsGroup = new THREE.Group();
+
+  const miniMoonGeo = new THREE.ExtrudeGeometry(createCrescentShape(0.115), { depth: 1.4, bevelEnabled: false });
+  const potMoonGeo = new THREE.ExtrudeGeometry(createCrescentShape(0.105), { depth: 1.2, bevelEnabled: false });
+  const hangMoonGeo = new THREE.ExtrudeGeometry(createCrescentShape(0.12), { depth: 1.4, bevelEnabled: false });
+  const hangStarGeo = new THREE.ExtrudeGeometry(createFourPointStarShape(4.2, 1.3), { depth: 1.4, bevelEnabled: false });
+
+  function createMoonJar(x, y, z) {
+    const jar = new THREE.Group();
+    const body = new THREE.Mesh(new THREE.CylinderGeometry(5.6, 5.6, 14.5, 20), matGlass);
+    body.position.y = 7.25;
+    const cork = new THREE.Mesh(new THREE.CylinderGeometry(4.3, 3.9, 2.6, 16), matBirchWarm);
+    cork.position.y = 15.3;
+
+    const miniMoon = new THREE.Mesh(miniMoonGeo, matOpalGlow);
+    miniMoon.position.set(1.2, 6.8, -0.7);
+    miniMoon.rotation.z = 0.25;
+
+    jar.add(body, cork, miniMoon);
+    jar.position.set(x, y, z);
+    return jar;
+  }
+  propsGroup.add(createMoonJar(-43, 125.8, -33));
+  propsGroup.add(createMoonJar(-36, 87.8, -33));
+
+  const houseLantern = new THREE.Group();
+  const hlBody = new THREE.Mesh(new THREE.BoxGeometry(10.5, 11.5, 9.5), matWoodDark);
+  hlBody.position.y = 5.75;
+  const hlRoof = new THREE.Mesh(new THREE.ConeGeometry(8.2, 5.2, 4), matBlackAcrylic);
+  hlRoof.position.y = 14; hlRoof.rotation.y = Math.PI / 4;
+  const hlWindow = new THREE.Mesh(new THREE.SphereGeometry(2.4, 12, 12), matOpalGlow);
+  hlWindow.scale.set(0.8, 1.3, 0.3);
+  hlWindow.position.set(0, 5.75, 4.8);
+  houseLantern.add(hlBody, hlRoof, hlWindow);
+  houseLantern.position.set(-25.5, 125.8, -33);
+  propsGroup.add(houseLantern);
+
+  function createMoonPot(x, y, z, scale) {
+    const pot = new THREE.Group();
+    const cup = new THREE.Mesh(new THREE.CylinderGeometry(4.6 * scale, 3.4 * scale, 8.2 * scale, 16), matTerracotta);
+    cup.position.y = 4.1 * scale;
+    const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 5.2 * scale, 6), matLeafGreen);
+    stem.position.y = 10.2 * scale;
+
+    const bud = new THREE.Mesh(potMoonGeo, matOpalGlow);
+    bud.scale.setScalar(scale);
+    bud.position.set(1.0 * scale, 13.8 * scale, -0.6 * scale);
+    bud.rotation.z = 0.25;
+
+    pot.add(cup, stem, bud);
+    pot.position.set(x, y, z);
+    return pot;
+  }
+  propsGroup.add(createMoonPot(-43, 49.8, -32, 1.0));
+  propsGroup.add(createMoonPot(-28.5, 49.8, -32, 0.85));
+
+  const can = new THREE.Group();
+  const cBody = new THREE.Mesh(new THREE.CylinderGeometry(4.1, 4.4, 8.2, 18), matPewter);
+  cBody.position.y = 4.1;
+  const cSpout = new THREE.Mesh(new THREE.CylinderGeometry(0.6, 1.05, 8.8, 10), matPewter);
+  cSpout.position.set(5.3, 5.3, 0); cSpout.rotation.z = -0.85;
+  const cHead = new THREE.Mesh(new THREE.CylinderGeometry(1.1, 0.65, 1.2, 10), matPewter);
+  cHead.position.set(8.5, 8.2, 0); cHead.rotation.z = -0.85;
+  const cHandle = new THREE.Mesh(new THREE.TorusGeometry(3.1, 0.5, 8, 16, Math.PI), matPewter);
+  cHandle.position.set(-3.5, 4.8, 0); cHandle.rotation.z = Math.PI / 2;
+  can.add(cBody, cSpout, cHead, cHandle);
+  can.scale.setScalar(1.45);
+  can.position.set(-34, 7, 55);
+  propsGroup.add(can);
+
+  const trowel = new THREE.Group();
+  const tBlade = new THREE.Mesh(new THREE.ConeGeometry(2.4, 6.5, 4), matPewter);
+  tBlade.rotation.x = Math.PI; tBlade.position.y = 3.25;
+  const tNeck = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.45, 1.8, 8), matPewter);
+  tNeck.position.y = 6.8;
+  const tHandle = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.75, 5.4, 10), matWoodDark);
+  tHandle.position.y = 9.8;
+  trowel.add(tBlade, tNeck, tHandle);
+  trowel.scale.setScalar(1.45);
+  trowel.position.set(-8, 7, 55);
+  propsGroup.add(trowel);
+
+  const basket = new THREE.Group();
+  const bBody = new THREE.Mesh(new THREE.CylinderGeometry(13, 9.5, 16, 24), matWoodDark);
+  bBody.scale.set(1.18, 1, 0.75);
+  bBody.position.y = 8;
+  basket.add(bBody);
+
+  [4.5, 8.5, 12.5].forEach(ry => {
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(9.8 + ry * 0.2, 0.38, 6, 24), matBirchWarm);
+    ring.rotation.x = Math.PI / 2;
+    ring.scale.set(1.18, 0.75, 1);
+    ring.position.y = ry;
+    basket.add(ring);
+  });
+
+  const flowerMats = [matFlowerPink, matFlowerPeach, matFlowerCream];
+  for (let i = 0; i < 22; i++) {
+    const flGrp = new THREE.Group();
+    const petal = new THREE.Mesh(new THREE.CylinderGeometry(3.4, 3.4, 1.0, 12), flowerMats[i % 3]);
+    petal.rotation.x = Math.PI / 2 - 0.3;
+    const center = new THREE.Mesh(new THREE.SphereGeometry(1.15, 8, 8), matWoodDark);
+    center.position.set(0, 0.3, 0.4);
+    flGrp.add(petal, center);
+
+    const ang = i * 2.399;
+    const rad = Math.sqrt(i / 22) * 11;
+    flGrp.position.set(Math.cos(ang) * rad * 1.12, 17 + (1 - rad / 13) * 4, Math.sin(ang) * rad * 0.72);
+    basket.add(flGrp);
+  }
+  basket.position.set(22, 7, 46);
+  propsGroup.add(basket);
+
+  // 벗어 둔 아이 신발 한 켤레 (꽃바구니 오른쪽 앞쪽 바닥, 울타리보다 앞)
+  function createLittleShoe(x, z, rotY) {
+    const shoe = new THREE.Group();
+    // 발등 (앞코가 둥근 몸통) - 나무 밑창 없이 바닥에 바로 놓임
+    const upper = new THREE.Mesh(new THREE.SphereGeometry(1, 16, 12), matTerracotta);
+    upper.scale.set(2.3, 2.1, 5.1);
+    upper.position.set(0, 2.0, 0.2);
+    // 뒤꿈치 쪽 입구를 살짝 파낸 느낌의 어두운 안쪽
+    const opening = new THREE.Mesh(new THREE.SphereGeometry(1, 12, 8), matSkyDark);
+    opening.scale.set(1.5, 0.9, 2.1);
+    opening.position.set(0, 3.5, -2.6);
+    // 끈 띠
+    const strap = new THREE.Mesh(new THREE.BoxGeometry(3.6, 0.5, 1.1), matBirchWarm);
+    strap.position.set(0, 3.2, 1.4);
+    shoe.add(upper, opening, strap);
+    shoe.position.set(x, 0, z);
+    shoe.rotation.y = rotY;
+    return shoe;
+  }
+  const shoeBase = new THREE.Group();
+  shoeBase.add(createLittleShoe(26, 60, -0.2));
+  shoeBase.add(createLittleShoe(33.5, 61, 0.1));
+  shoeBase.position.y = 7;
+  propsGroup.add(shoeBase);
+
+  const hangingCoords = [
+    [22, 198, -10, true], [35, 210, -20, true], [39, 178, 4, true],
+    [-14, 232, 14, false], [37, 218, 22, false], [-36, 202, 24, false], [44, 162, 16, false]
+  ];
+  hangingCoords.forEach(([hx, hy, hz, isStar]) => {
+    const wireLen = 246 - hy;
+    const wire = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, wireLen, 4), matGoldFoil);
+    wire.position.set(hx, hy + wireLen / 2, hz);
+    propsGroup.add(wire);
+
+    const charm = new THREE.Mesh(isStar ? hangStarGeo : hangMoonGeo, matOpalGlow);
+    if (!isStar) {
+      charm.rotation.z = 0.25;
+      charm.position.set(hx + 1.2, hy, hz - 0.7);
+    } else {
+      charm.position.set(hx, hy, hz - 0.7);
+    }
+    propsGroup.add(charm);
+  });
+
+  registerPart('props', propsGroup, [0, 8, 15]);
+
+  // ==============================================================================
+  // 5. 3중 깊이 다중 레이어 덩굴
+  // ==============================================================================
+  const decorGroup = new THREE.Group();
+
+  const leafShape = new THREE.Shape();
+  leafShape.moveTo(0, 0); leafShape.lineTo(3.6, 2.5); leafShape.lineTo(7.4, 0); leafShape.lineTo(3.6, -2.5); leafShape.closePath();
+  const leafGeo = new THREE.ExtrudeGeometry(leafShape, { depth: 0.6, bevelEnabled: false });
+  const vineStarGeo = new THREE.ExtrudeGeometry(createFourPointStarShape(2.5, 0.75), { depth: 0.5, bevelEnabled: false });
+
+  [
+    { z: 40, x: -48.5, yMin: 25, yMax: 185, step: 15, hasStem: true },
+    { z: 12, x: -46, yMin: 40, yMax: 205, step: 18, hasStem: true },
+    { z: -18, x: -55, yMin: 55, yMax: 215, step: 20, hasStem: false }
+  ].forEach((layer, lIdx) => {
+    if (layer.hasStem) {
+      const stemH = layer.yMax - layer.yMin;
+      const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.85, 0.85, stemH, 6), matVineStem);
+      stem.position.set(layer.x, layer.yMin + stemH / 2, layer.z);
+      decorGroup.add(stem);
+    }
+
+    for (let y = layer.yMin; y <= layer.yMax; y += layer.step) {
+      const lf1 = new THREE.Mesh(leafGeo, matLeafGreen);
+      lf1.position.set(layer.x, y, layer.z);
+      lf1.rotation.set(0, 0.35, 2.45);
+      decorGroup.add(lf1);
+
+      const lf2 = new THREE.Mesh(leafGeo, matLeafGreen);
+      lf2.position.set(layer.x, y + 6, layer.z);
+      lf2.rotation.set(0, 0.35, 0.55);
+      decorGroup.add(lf2);
+
+      if ((y + lIdx * 7) % 2 === 0) {
+        const fl = new THREE.Group();
+        const pet = new THREE.Mesh(new THREE.CylinderGeometry(3.0, 3.0, 0.8, 12), flowerMats[(y + lIdx) % 3]);
+        pet.rotation.x = Math.PI / 2;
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(0.95, 6, 6), matWoodDark);
+        dot.position.z = 0.45;
+        fl.add(pet, dot);
+        fl.position.set(layer.x + 1.5, y + 3, layer.z + 1.2);
+        fl.rotation.y = 0.4;
+        decorGroup.add(fl);
+      } else {
+        const miniStar = new THREE.Mesh(vineStarGeo, matGoldFoil);
+        miniStar.position.set(layer.x + 2, y + 4, layer.z + 2);
+        miniStar.rotation.y = 0.4;
+        decorGroup.add(miniStar);
+      }
+    }
+  });
+
+  [
+    { z: 38, r: 48.5, count: 18 },
+    { z: 14, r: 46.0, count: 14 }
+  ].forEach((archLayer, aIdx) => {
+    for (let i = 0; i <= archLayer.count; i++) {
+      const ang = Math.PI - (i / archLayer.count) * Math.PI;
+      const ax = 0 + Math.cos(ang) * archLayer.r;
+      const ay = 189.5 + Math.sin(ang) * archLayer.r;
+
+      const lf = new THREE.Mesh(leafGeo, matLeafGreen);
+      lf.position.set(ax, ay, archLayer.z);
+      lf.rotation.z = ang - Math.PI / 2;
+      decorGroup.add(lf);
+
+      if (i % 3 === aIdx) {
+        const fl = new THREE.Group();
+        const pet = new THREE.Mesh(new THREE.CylinderGeometry(3.1, 3.1, 0.8, 12), flowerMats[(i + aIdx) % 3]);
+        pet.rotation.x = Math.PI / 2;
+        const dot = new THREE.Mesh(new THREE.SphereGeometry(1.0, 6, 6), matWoodDark);
+        dot.position.z = 0.45;
+        fl.add(pet, dot);
+        fl.position.set(ax, ay - 2.2, archLayer.z + 1.2);
+        decorGroup.add(fl);
+      }
+    }
+  });
+
+  registerPart('decor', decorGroup, [0, 0, -10]);
+})();
+
+// ==============================================================================
+// 6. UI 인터랙션 컨트롤
+// ==============================================================================
+const explodeSlider = document.getElementById('explode-slider');
+const explodeVal = document.getElementById('explode-val');
+
+explodeSlider.addEventListener('input', (e) => {
+  const ratio = Number(e.target.value) / 100;
+  explodeVal.textContent = `${e.target.value}%`;
+  Object.values(parts).forEach(p => {
+    p.mesh.position.copy(p.basePos).addScaledVector(p.explodeVec, ratio);
+  });
+});
+
+document.getElementById('toggle-led').addEventListener('change', (e) => {
+  const on = e.target.checked;
+  moonLight.intensity = on ? 2.5 : 0;
+  shelfLight.intensity = on ? 1.4 : 0;
+  matOpalGlow.emissiveIntensity = on ? 1.15 : 0.05;
+  if (moonHaloMesh) moonHaloMesh.visible = on;
+});
+
+document.getElementById('vis-front').addEventListener('change', e => parts.front.mesh.visible = e.target.checked);
+document.getElementById('vis-left').addEventListener('change', e => parts.left.mesh.visible = e.target.checked);
+document.getElementById('vis-right').addEventListener('change', e => parts.right.mesh.visible = e.target.checked);
+document.getElementById('vis-back').addEventListener('change', e => {
+  parts.back.mesh.visible = e.target.checked;
+  parts.top.mesh.visible = e.target.checked;
+});
+document.getElementById('vis-decor').addEventListener('change', e => parts.decor.mesh.visible = e.target.checked);
+
+function setView(mode) {
+  document.querySelectorAll('.btn-row button').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn-' + mode).classList.add('active');
+
+  if (mode === 'mockup') {
+    camera.position.set(138, 134, 315);
+    controls.target.set(0, 124, 0);
+  } else if (mode === 'front') {
+    camera.position.set(0, 125, 350);
+    controls.target.set(0, 125, 0);
+  } else if (mode === 'inside') {
+    camera.position.set(42, 165, 145);
+    controls.target.set(4, 165, 2);
+  } else if (mode === 'topangle') {
+    camera.position.set(185, 225, 295);
+    controls.target.set(0, 120, 0);
+  }
+}
+
+window.addEventListener('resize', () => {
+  camera.aspect = container.clientWidth / container.clientHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+function animate() {
+  requestAnimationFrame(animate);
+  controls.update();
+  renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>
