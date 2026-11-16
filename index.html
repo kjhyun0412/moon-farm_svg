@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>달을 수확하는 농장</title>
+<style>
+  :root{--bg:#f6f3ec;--card:#fff;--ink:#1b2340;--muted:#6b7390;--line:#e4dfd2;--accent:#c98a1b;--navy:#0c1540}
+  @media (prefers-color-scheme:dark){:root{--bg:#0c1230;--card:#141b3d;--ink:#eef0fa;--muted:#9aa3c7;--line:#262f5c;--accent:#f0b84a}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif;line-height:1.6}
+  main{max-width:880px;margin:0 auto;padding:40px 16px 64px}
+  h1{font-size:clamp(26px,5vw,38px);margin:0 0 6px}
+  .sub{color:var(--muted);margin:0 0 28px}
+  .hero{width:100%;border-radius:16px;border:1px solid var(--line);background:var(--navy);display:block}
+  .grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:28px 0}
+  a.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 20px;text-decoration:none;color:inherit}
+  a.card:hover{border-color:var(--accent)}
+  a.card b{display:block;font-size:18px;margin-bottom:4px}
+  a.card span{color:var(--muted);font-size:14px}
+  h2{font-size:20px;margin:36px 0 10px}
+  ul.files{list-style:none;margin:0;padding:0;display:grid;gap:8px;grid-template-columns:repeat(auto-fill,minmax(300px,1fr))}
+  ul.files a{display:flex;justify-content:space-between;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px 14px;color:var(--ink);text-decoration:none;font-size:14px}
+  ul.files a:hover{border-color:var(--accent)}
+  ul.files em{font-style:normal;color:var(--muted);white-space:nowrap}
+  .note{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:10px;padding:14px 18px;font-size:14px;color:var(--muted)}
+  footer{margin-top:40px;font-size:13px;color:var(--muted)}
+  footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+  <h1>달을 수확하는 농장</h1>
+  <p class="sub">레이저 커터로 만드는 부크누크 · 120 × 250 × 147mm</p>
+  <img class="hero" src="달수확농장_SVG/단계이미지/01_완성_메인.png" alt="완성 모습">
+
+  <div class="grid">
+    <a class="card" href="달수확농장_SVG/조립가이드.html"><b>조립 가이드</b><span>완성 모습, 시트별 부품, 조립 순서 (먼저 보세요)</span></a>
+    <a class="card" href="달수확농장_SVG/3D-view.html"><b>3D 뷰어</b><span>모델을 돌려 보기 · 인터넷 연결 필요</span></a>
+    <a class="card" href="달수확농장_SVG/제작가이드_영상.mp4"><b>가이드 영상</b><span>약 2분 · 소리 없음 · 3D 모델 기반</span></a>
+    <a class="card" href="달수확농장_SVG/README.md"><b>상세 설명</b><span>좌표계, 레이어 색, 접합 규칙</span></a>
+  </div>
+
+  <h2>레이저 도면 (SVG)</h2>
+  <ul class="files">
+    <li><a href="달수확농장_SVG/01_공차시험조각.svg">01 공차 시험 조각 <em>합판 2·3·4mm · 먼저!</em></a></li>
+    <li><a href="달수확농장_SVG/02_합판3mm_외장판.svg">02 외장판 <em>합판 3mm</em></a></li>
+    <li><a href="달수확농장_SVG/03_합판3mm_달_조명상자.svg">03 달 조명상자 <em>합판 3mm</em></a></li>
+    <li><a href="달수확농장_SVG/04_합판3mm_덩굴줄기.svg">04 덩굴줄기 <em>합판 3mm</em></a></li>
+    <li><a href="달수확농장_SVG/05_합판3mm_소품.svg">05 소품 <em>합판 3mm</em></a></li>
+    <li><a href="달수확농장_SVG/06_합판4mm_바닥_기둥_선반.svg">06 바닥·기둥·선반 <em>합판 4mm</em></a></li>
+    <li><a href="달수확농장_SVG/07_합판2mm_울타리_사다리_모종삽_신발.svg">07 울타리·사다리·모종삽·신발 <em>합판 2mm</em></a></li>
+    <li><a href="달수확농장_SVG/08_아크릴3mm_유백달_투명병_랜턴창.svg">08 달·병·랜턴창 <em>아크릴 3mm</em></a></li>
+    <li><a href="달수확농장_SVG/09_아크릴2mm_검정_아이실루엣.svg">09 아이 실루엣 <em>아크릴 2mm 검정</em></a></li>
+    <li><a href="달수확농장_SVG/10_아크릴2mm_유백_별_달_새싹.svg">10 별·달·새싹 <em>아크릴 2mm 유백</em></a></li>
+    <li><a href="달수확농장_SVG/11_종이_잎_꽃_별_풀.svg">11 잎·꽃·별·풀 <em>종이</em></a></li>
+    <li><a href="달수확농장_SVG/00_조립배치도.svg">00 조립 배치도 <em>참고용 · 자르지 않음</em></a></li>
+  </ul>
+
+  <h2>시작하기 전에</h2>
+  <p class="note">아직 실제 시험 절단을 하지 않은 도면이에요. 커프(절단 폭)와 끼움 여유는 보정 전이니, <b>01 공차 시험 조각</b> 결과로 먼저 맞춘 뒤 나머지를 자르세요.</p>
+
+  <footer>소스와 생성 스크립트: <a href="https://github.com/kjhyun0412/moon-farm_svg">GitHub 저장소</a></footer>
+</main>
+</body>
+</html>
